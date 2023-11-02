@@ -1,0 +1,45 @@
+
+# Why do I need to disable swap on kubernetes
+# The idea of kubernetes is to tightly pack instances to 
+# as close to 100% utilized as possible. All deployments should be 
+# pinned with CPU/memory limits. So if the scheduler sends a pod 
+# to a machine it should never use swap at all. 
+# You don't want to swap since it'll slow things down.
+
+
+- name: Disable swap
+  hosts: all
+  remote_user: ubuntu
+  roles:
+    - disable-swap
+
+- name: Configure networks
+  hosts: all
+  remote_user: ubuntu
+  roles:
+    - configure-network-rules
+
+- name: Install kubernetes,docker packages
+  hosts: all
+  remote_user: ubuntu
+  roles: 
+   - install-packages
+
+
+- name: Deploy kubernetes cluster
+  hosts: Master
+  remote_user: ubuntu
+  roles:
+    - deploy-k8s
+
+- name: Joining workers to the cluster…
+  hosts: Worker
+  remote_user: ubuntu
+  roles:
+    - join-cluster
+
+- name: Run helm chart
+  hosts: Master
+  remote_user: ubuntu
+  roles:
+    - run_helm_chart

@@ -1,0 +1,111 @@
+---
+# tasks file for install-packages
+- name: Install APT Transport HTTPS
+  become: yes
+  apt:
+    name: apt-transport-https
+    state: present
+
+- name: Install ca-certificates
+  become: yes
+  apt:
+    name: ca-certificates
+    state: present
+
+- name: Install curl
+  become: yes
+  apt:
+    name: curl
+    state: present
+
+- name: Install Docker
+  become: yes
+  apt:
+    name: docker.io
+    state: present
+    update_cache: true
+
+- name: Enable Docker
+  become: yes
+  service:
+    name: docker
+    enabled: yes
+
+- name: Let user run docker without sudo
+  become: yes
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+    state: present
+
+- name: Configure Docker to use systemd groups
+  become: yes
+  shell:
+    cmd: |
+      cat <<EOF | sudo tee /etc/docker/daemon.json
+      {
+        "exec-opts": ["native.cgroupdriver=systemd"],
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "100m"
+        },
+        "storage-driver": "overlay2"
+      }
+      EOF
+  
+
+
+- name : Reload Docker
+  become: yes
+  shell: sudo systemctl daemon-reload && sudo systemctl restart docker
+
+- name: Add kubernetes apt-key
+  become: yes
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add kubernetes APT repository
+  become: yes
+  apt_repository:
+    repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+    filename: 'kubernetes'
+
+- name: Installing kubelet
+  become: yes
+  apt:
+    name: kubelet
+    state: present
+    update_cache: true
+
+
+- name: Install kubeadm
+  become: yes
+  apt:
+    name: kubeadm
+    state: present
+    update_cache: true
+
+- name: Set kube services on hold
+  become: yes
+  shell: sudo apt-mark hold kubelet kubeadm kubectl
+
+
+- name: Apply newly created kubernetes config file
+  become: yes
+  shell: sysctl -p /etc/sysctl.d/k8s.conf
+  
+- name: Deploy docker iptables rule…
+  become: yes
+  shell: iptables -P FORWARD ACCEPT
+
+- name: Download helm script...
+  shell: curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+  args:
+    chdir: /home/ubuntu/
+
+- name: Install helm
+  become: yes
+  shell: chmod 700 get_helm.sh && /home/ubuntu/get_helm.sh

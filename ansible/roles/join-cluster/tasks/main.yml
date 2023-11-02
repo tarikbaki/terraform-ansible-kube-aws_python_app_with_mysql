@@ -1,0 +1,12 @@
+---
+# tasks file for join-cluster
+- name: DEBUG JOIN COMMAND
+  ansible.builtin.debug:
+    var: hostvars[groups['Master'][0]]['join_command']
+    verbosity: 1
+   
+
+- name: Join Cluster
+  become: yes
+  shell: "{{ hostvars[groups['Master'][0]]['join_command'] }}"
+  

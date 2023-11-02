@@ -1,0 +1,17 @@
+---
+# tasks file for disable-swap
+- name: Disable swap on hosts
+  become: yes
+  shell: swapoff -a
+
+# We are disabling swap and making sure that after a reboot, 
+# swap will not enable itself because of the fstab file. 
+# We are disabling swap because kubernetes pods won’t use swap and we don’t need a swap space. 
+# It’s for performance.
+
+- name: Disable swap from fstab
+  become: yes
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'

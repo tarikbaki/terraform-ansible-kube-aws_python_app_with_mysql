@@ -1,0 +1,32 @@
+---
+# tasks file for configure-network-rules
+- name: Load br_netfilter
+  become: yes
+  shell:
+    cmd: |
+      cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf 
+      br_netfilter
+      EOF
+  
+- name: Creating kubernetes config file for host network…
+  become: yes
+  shell:
+    cmd: |
+      cat <<EOF | sudo tee > /etc/sysctl.d/k8s.conf 
+      net.bridge.bridge-nf-call-ip6tables=1 
+      net.bridge.bridge-nf-call-iptables=1
+      EOF
+  args:
+    chdir: /etc/sysctl.d
+    creates: k8s.conf
+
+- name: Apply sysctl file config
+  become: yes
+  shell: sysctl --system
+
+
+
+# - name: Disable UFW…
+#   become: yes
+#   ufw:
+#     state: disabled
